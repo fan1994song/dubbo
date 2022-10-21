@@ -196,9 +196,9 @@ jobs:
         with:
           path: ~/.m2/repository/org/apache/dubbo
           key: ${{ runner.os }}-dubbo-snapshot-${{ github.sha }}-${{ github.run_id }}
-            restore-keys: |
-              ${{ runner.os }}-dubbo-snapshot-${{ github.sha }}
-              ${{ runner.os }}-dubbo-snapshot-
+          restore-keys: |
+            ${{ runner.os }}-dubbo-snapshot-${{ github.sha }}
+            ${{ runner.os }}-dubbo-snapshot-
       - name: "Test with Maven with Integration Tests"
         timeout-minutes: 70
         run: bash unit-test.sh
