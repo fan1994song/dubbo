@@ -188,7 +188,6 @@ jobs:
             ${{ runner.os }}-maven-
       - name: "Test with Maven with Integration Tests"
         timeout-minutes: 70
-        if: ${{ startsWith( matrix.os, 'ubuntu') }}
         run: bash unit-test.sh
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v1
