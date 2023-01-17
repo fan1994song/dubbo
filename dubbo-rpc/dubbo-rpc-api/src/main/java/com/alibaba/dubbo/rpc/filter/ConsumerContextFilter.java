@@ -30,6 +30,7 @@ import com.alibaba.dubbo.rpc.RpcResult;
 
 /**
  * ConsumerContextInvokerFilter
+ * 消费者过滤器，将invocation、localhost、remote host放入上下文中
  */
 @Activate(group = Constants.CONSUMER, order = -10000)
 public class ConsumerContextFilter implements Filter {

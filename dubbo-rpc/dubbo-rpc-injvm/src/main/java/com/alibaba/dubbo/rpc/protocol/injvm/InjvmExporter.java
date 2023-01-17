@@ -29,6 +29,9 @@ class InjvmExporter<T> extends AbstractExporter<T> {
 
     private final String key;
 
+    /**
+     * inJvm 主要通过缓存存储数据用于本地调用
+     */
     private final Map<String, Exporter<?>> exporterMap;
 
     InjvmExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {

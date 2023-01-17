@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Round robin load balance.
+ * 基于权重的轮训负载均衡策略
  * 
  * Smoothly round robin's implementation @since 2.6.5 
  */
@@ -85,9 +86,18 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
         }
         return null;
     }
-    
+
+    /**
+     * 通过Atomic原子类，来控制并发场景
+     * @param invokers
+     * @param url
+     * @param invocation
+     * @param <T>
+     * @return
+     */
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        // 拿到服务接口的基于权重的轮训算法实现
         String key = invokers.get(0).getUrl().getServiceKey() + "." + invocation.getMethodName();
         ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.get(key);
         if (map == null) {
@@ -100,22 +110,26 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
         Invoker<T> selectedInvoker = null;
         WeightedRoundRobin selectedWRR = null;
         for (Invoker<T> invoker : invokers) {
+            // 获取具体实例接口的权重
             String identifyString = invoker.getUrl().toIdentityString();
             WeightedRoundRobin weightedRoundRobin = map.get(identifyString);
             int weight = getWeight(invoker, invocation);
             if (weight < 0) {
                 weight = 0;
             }
+            // 当前实例不存在负载信息，创建权重随机信息
             if (weightedRoundRobin == null) {
                 weightedRoundRobin = new WeightedRoundRobin();
                 weightedRoundRobin.setWeight(weight);
                 map.putIfAbsent(identifyString, weightedRoundRobin);
                 weightedRoundRobin = map.get(identifyString);
             }
+            // 权重不相同，设置最近的权重信息
             if (weight != weightedRoundRobin.getWeight()) {
                 //weight changed
                 weightedRoundRobin.setWeight(weight);
             }
+            // 递增当前权重，谁的权重大，谁是本次轮训的目标服务器
             long cur = weightedRoundRobin.increaseCurrent();
             weightedRoundRobin.setLastUpdate(now);
             if (cur > maxCurrent) {
@@ -123,8 +137,10 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
                 selectedInvoker = invoker;
                 selectedWRR = weightedRoundRobin;
             }
+            // 总计权重
             totalWeight += weight;
         }
+        // 数量不一致，心跳超时的机器暂时忽略
         if (!updateLock.get() && invokers.size() != map.size()) {
             if (updateLock.compareAndSet(false, true)) {
                 try {
@@ -144,10 +160,12 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
                 }
             }
         }
+        // 本次调度到的权重服务器，权重设置为最低
         if (selectedInvoker != null) {
             selectedWRR.sel(totalWeight);
             return selectedInvoker;
         }
+        // 没有选中的，就选择第一个，应该也就单台机器可能走到这里
         // should not happen here
         return invokers.get(0);
     }

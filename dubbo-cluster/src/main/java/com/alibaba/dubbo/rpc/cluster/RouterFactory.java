@@ -32,6 +32,7 @@ import com.alibaba.dubbo.common.extension.SPI;
 public interface RouterFactory {
 
     /**
+     * 根据url中的协议来查找路由规则
      * Create router.
      *
      * @param url

@@ -54,11 +54,15 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
         this.url = url;
 
         String componentKey;
+        // 针对该URL数据，消费者类型
         if (Constants.CONSUMER_SIDE.equalsIgnoreCase(url.getParameter(Constants.SIDE_KEY))) {
             componentKey = Constants.CONSUMER_SIDE;
+            // 是否共享线程池，默认不共享
             if (url.getParameter(SHARE_EXECUTOR_KEY, false)) {
+                // 获取共享线程池，不存在则创建，填入dataStore数据中
                 ExecutorService cExecutor = (ExecutorService) dataStore.get(componentKey, SHARED_CONSUMER_EXECUTOR_PORT);
                 if (cExecutor == null) {
+                    // 默认使用fixed类型线程池，200个业务线程，无队列，超出就抛出异常
                     cExecutor = (ExecutorService) ExtensionLoader.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
                     dataStore.put(componentKey, SHARED_CONSUMER_EXECUTOR_PORT, cExecutor);
                     cExecutor = (ExecutorService) dataStore.get(componentKey, SHARED_CONSUMER_EXECUTOR_PORT);
@@ -69,6 +73,7 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
                 dataStore.put(componentKey, Integer.toString(url.getPort()), executor);
             }
         } else {
+            // 针对该URL数据，提供者类型，就是用默认的fixed线程池
             componentKey = Constants.EXECUTOR_SERVICE_COMPONENT_KEY;
             executor = (ExecutorService) ExtensionLoader.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
             dataStore.put(componentKey, Integer.toString(url.getPort()), executor);

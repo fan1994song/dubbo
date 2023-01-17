@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * NettyClientHandler
+ * 封装Netty服务端事件，处理连接、断开、读取、写入和异常等
  */
 @io.netty.channel.ChannelHandler.Sharable
 public class NettyServerHandler extends ChannelDuplexHandler {
@@ -39,6 +40,9 @@ public class NettyServerHandler extends ChannelDuplexHandler {
 
     private final URL url;
 
+    /**
+     * 主要的业务逻辑应该都在handler这里进行调用处理，可能handler内部定义了一套接口规范，内部一定是进行了线程池的切换
+     */
     private final ChannelHandler handler;
 
     public NettyServerHandler(URL url, ChannelHandler handler) {

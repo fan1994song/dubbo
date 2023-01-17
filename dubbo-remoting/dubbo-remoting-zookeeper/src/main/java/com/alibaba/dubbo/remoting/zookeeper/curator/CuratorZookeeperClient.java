@@ -44,6 +44,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
     public CuratorZookeeperClient(URL url) {
         super(url);
         try {
+            // 创建zk连接的客户端
             int timeout = url.getParameter(Constants.TIMEOUT_KEY, 5000);
             CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                     .connectString(url.getBackupAddress())
@@ -54,6 +55,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
                 builder = builder.authorization("digest", authority.getBytes());
             }
             client = builder.build();
+            // 添加连接监听器
             client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState state) {
@@ -66,6 +68,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
                     }
                 }
             });
+            // 启动client
             client.start();
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
@@ -138,6 +141,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
         return new CuratorWatcherImpl(listener);
     }
 
+    // 在添加监听器之后会返回监听path当前的所有的子节点
     @Override
     public List<String> addTargetChildListener(String path, CuratorWatcher listener) {
         try {
@@ -170,7 +174,13 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
         public void process(WatchedEvent event) throws Exception {
             if (listener != null) {
                 String path = event.getPath() == null ? "" : event.getPath();
+                // 此时处理变动子节点的同时，再次注册上watch监听
                 listener.childChanged(path,
+                        // 如果路径为空，管理员使用watcher将抛出NullPointerException。如果客户端连接或断开与服务器的连接，
+                        // zookeeper将排队观看事件(watch . event . eventtype . eventtype .)没有,. .， path = null)。
+
+                        //再次设置监听，并且把监听path的所有子节点传入childChanged方法
+
                         // if path is null, curator using watcher will throw NullPointerException.
                         // if client connect or disconnect to server, zookeeper will queue
                         // watched event(Watcher.Event.EventType.None, .., path = null).

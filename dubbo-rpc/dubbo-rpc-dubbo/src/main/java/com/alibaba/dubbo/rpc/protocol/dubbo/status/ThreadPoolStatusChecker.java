@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * ThreadPoolStatusChecker
+ * dubbo线程池检查
  */
 @Activate
 public class ThreadPoolStatusChecker implements StatusChecker {

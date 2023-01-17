@@ -61,6 +61,7 @@ public class DubboMonitor implements Monitor {
         this.monitorService = monitorService;
         this.monitorInterval = monitorInvoker.getUrl().getPositiveParameter("interval", 60000);
         // collect timer for collecting statistics data
+        // 收集信息推送定时任务，每分钟执行一次向监控平台发送当前服务信息
         sendFuture = scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {

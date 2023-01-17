@@ -87,6 +87,7 @@ final class NettyCodecAdapter {
 
             int saveReaderIndex;
 
+            // 死循环读取channel发送过来的数据，
             try {
                 // decode object.
                 do {

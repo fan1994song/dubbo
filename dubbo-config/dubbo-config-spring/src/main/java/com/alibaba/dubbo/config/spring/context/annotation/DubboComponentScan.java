@@ -35,6 +35,8 @@ import java.lang.annotation.Target;
  * @see Service
  * @see Reference
  * @since 2.5.7
+ *
+ * 当用户使用注解旧DubboComponentScan 时，会激活 DubboComponentScanRegistrar
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

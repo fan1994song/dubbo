@@ -135,6 +135,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     @SuppressWarnings("deprecation")
     protected void checkApplication() {
         // for backward compatibility
+        // 为了向后兼容
         if (application == null) {
             String applicationName = ConfigUtils.getProperty("dubbo.application.name");
             if (applicationName != null && applicationName.length() > 0) {
@@ -145,8 +146,10 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             throw new IllegalStateException(
                     "No such application config! Please add <dubbo:application name=\"...\" /> to your spring config.");
         }
+        // 追加属性
         appendProperties(application);
 
+        // 应该是设置shutdown时优雅停机等待时间
         String wait = ConfigUtils.getProperty(Constants.SHUTDOWN_WAIT_KEY);
         if (wait != null && wait.trim().length() > 0) {
             System.setProperty(Constants.SHUTDOWN_WAIT_KEY, wait.trim());
@@ -161,27 +164,37 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     protected List<URL> loadRegistries(boolean provider) {
         checkRegistry();
         List<URL> registryList = new ArrayList<URL>();
+        // 遍历注册中心配置信息，builder组成配置中心的URL地址
         if (registries != null && !registries.isEmpty()) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
                 if (address == null || address.length() == 0) {
                     address = Constants.ANYHOST_VALUE;
                 }
+                // 使用dubbo.registry.address作为地址，示例：dubbo.registry.address=zookeeper://${zookeeper.address:127.0.0.1}:2181
                 String sysaddress = System.getProperty("dubbo.registry.address");
                 if (sysaddress != null && sysaddress.length() > 0) {
                     address = sysaddress;
                 }
+                // 当address存在且是可用(非N/A)的address标志时
                 if (address.length() > 0 && !RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
+                    // TODO: 2022/11/2 建议debug下
+                    // 设置应用信息
                     appendParameters(map, application);
                     appendParameters(map, config);
+                    // 设置path
                     map.put("path", RegistryService.class.getName());
+                    // 设置dubbo协议的版本信息
                     map.put("dubbo", Version.getProtocolVersion());
+                    // 设置时间戳、服务提供的进程ID(pid)
                     map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
                     if (ConfigUtils.getPid() > 0) {
                         map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
                     }
+                    // 若未设置协议信息
                     if (!map.containsKey("protocol")) {
+                        // 扩展了remote，使用remote协议，否则默认是dubbo(remote协议是什么玩意？？)
                         if (ExtensionLoader.getExtensionLoader(RegistryFactory.class).hasExtension("remote")) {
                             map.put("protocol", "remote");
                         } else {
@@ -192,8 +205,10 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     for (URL url : urls) {
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
+                        // 若是服务提供者，判断是否只注册不订阅,如果是服务消费者，判断是否只注册不订阅
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
+                            // 如果是，不添加到结果 registryList
                             registryList.add(url);
                         }
                     }
@@ -203,6 +218,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return registryList;
     }
 
+    /**
+     * 加载监视器信息
+     * @param registryURL
+     * @return
+     */
     protected URL loadMonitor(URL registryURL) {
         if (monitor == null) {
             String monitorAddress = ConfigUtils.getProperty("dubbo.monitor.address");
@@ -258,15 +278,22 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return null;
     }
 
+    /**
+     * 接口信息和方法名称进行校验
+     * @param interfaceClass
+     * @param methods
+     */
     protected void checkInterfaceAndMethods(Class<?> interfaceClass, List<MethodConfig> methods) {
         // interface cannot be null
         if (interfaceClass == null) {
             throw new IllegalStateException("interface not allow null!");
         }
+        // 必须是接口、不能为null
         // to verify interfaceClass is an interface
         if (!interfaceClass.isInterface()) {
             throw new IllegalStateException("The interface class " + interfaceClass + " is not a interface!");
         }
+        // 若方法存在接口中，进行校验处理
         // check if methods exist in the interface
         if (methods != null && !methods.isEmpty()) {
             for (MethodConfig methodBean : methods) {
@@ -281,6 +308,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                         break;
                     }
                 }
+                // 接口class不包含methods中的方法，抛出异常
                 if (!hasMethod) {
                     throw new IllegalStateException("The interface " + interfaceClass.getName()
                             + " not found method " + methodName);

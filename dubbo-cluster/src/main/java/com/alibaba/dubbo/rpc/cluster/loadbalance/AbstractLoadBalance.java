@@ -30,6 +30,14 @@ import java.util.List;
  */
 public abstract class AbstractLoadBalance implements LoadBalance {
 
+    /**
+     * 比如 uptime：5，warmup：10，weight：100
+     * 5/（10/100）= 50 权重，随着上线时间越来越大，直到大于预热时间权重变为真实值
+     * @param uptime
+     * @param warmup
+     * @param weight
+     * @return
+     */
     static int calculateWarmupWeight(int uptime, int warmup, int weight) {
         int ww = (int) ((float) uptime / ((float) warmup / (float) weight));
         return ww < 1 ? 1 : (ww > weight ? weight : ww);
@@ -47,12 +55,14 @@ public abstract class AbstractLoadBalance implements LoadBalance {
     protected abstract <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation);
 
     protected int getWeight(Invoker<?> invoker, Invocation invocation) {
+        // 获取注册中心URL中的权重值，默认100
         int weight = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.WEIGHT_KEY, Constants.DEFAULT_WEIGHT);
         if (weight > 0) {
             long timestamp = invoker.getUrl().getParameter(Constants.REMOTE_TIMESTAMP_KEY, 0L);
             if (timestamp > 0L) {
                 int uptime = (int) (System.currentTimeMillis() - timestamp);
                 int warmup = invoker.getUrl().getParameter(Constants.WARMUP_KEY, Constants.DEFAULT_WARMUP);
+                // 若上线时间小于预热时间，计算当前机器的权重，预热权重非常低
                 if (uptime > 0 && uptime < warmup) {
                     weight = calculateWarmupWeight(uptime, warmup, weight);
                 }

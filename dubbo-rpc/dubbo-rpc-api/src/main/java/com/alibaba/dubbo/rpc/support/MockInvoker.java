@@ -38,6 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 应该是m
+ * @param <T>
+ */
 final public class MockInvoker<T> implements Invoker<T> {
     private final static ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
     private final static Map<String, Invoker<?>> mocks = new ConcurrentHashMap<String, Invoker<?>>();
@@ -53,13 +57,23 @@ final public class MockInvoker<T> implements Invoker<T> {
         return parseMockValue(mock, null);
     }
 
+    /**
+     * 解析mock配置填写的数据
+     * @param mock
+     * @param returnTypes
+     * @return
+     * @throws Exception
+     */
     public static Object parseMockValue(String mock, Type[] returnTypes) throws Exception {
         Object value = null;
         if ("empty".equals(mock)) {
+            // 配置empty，返回空或者returnTypes中第一个类型
             value = ReflectUtils.getEmptyObject(returnTypes != null && returnTypes.length > 0 ? (Class<?>) returnTypes[0] : null);
         } else if ("null".equals(mock)) {
+            // 配置null，返回空
             value = null;
         } else if ("true".equals(mock)) {
+            // boolean类型，直接返回
             value = true;
         } else if ("false".equals(mock)) {
             value = false;
@@ -69,10 +83,13 @@ final public class MockInvoker<T> implements Invoker<T> {
         } else if (returnTypes != null && returnTypes.length > 0 && returnTypes[0] == String.class) {
             value = mock;
         } else if (StringUtils.isNumeric(mock)) {
+            // 转换返回为数值类型
             value = JSON.parse(mock);
         } else if (mock.startsWith("{")) {
+            // 返回mock的map数据
             value = JSON.parseObject(mock, Map.class);
         } else if (mock.startsWith("[")) {
+            // 返回mock的list数据
             value = JSON.parseObject(mock, List.class);
         } else {
             value = mock;
@@ -85,6 +102,7 @@ final public class MockInvoker<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
+        // 根据方法名.mock作为参数查询URL的mock属性，若为空，获取mock属性
         String mock = getUrl().getParameter(invocation.getMethodName() + "." + Constants.MOCK_KEY);
         if (invocation instanceof RpcInvocation) {
             ((RpcInvocation) invocation).setInvoker(this);
@@ -96,7 +114,9 @@ final public class MockInvoker<T> implements Invoker<T> {
         if (StringUtils.isBlank(mock)) {
             throw new RpcException(new IllegalAccessException("mock can not be null. url :" + url));
         }
+        // mock字符串解码
         mock = normalizeMock(URL.decode(mock));
+        // 如果是return作为起始字符串
         if (mock.startsWith(Constants.RETURN_PREFIX)) {
             mock = mock.substring(Constants.RETURN_PREFIX.length()).trim();
             try {
@@ -108,6 +128,7 @@ final public class MockInvoker<T> implements Invoker<T> {
                         + ", mock:" + mock + ", url: " + url, ew);
             }
         } else if (mock.startsWith(Constants.THROW_PREFIX)) {
+            // 如果是抛出异常作为起始字符串，直接抛出相关异常
             mock = mock.substring(Constants.THROW_PREFIX.length()).trim();
             if (StringUtils.isBlank(mock)) {
                 throw new RpcException("mocked exception for service degradation.");
@@ -117,6 +138,7 @@ final public class MockInvoker<T> implements Invoker<T> {
             }
         } else { //impl mock
             try {
+                // 如果是实现了相关的mock接口
                 Invoker<T> invoker = getInvoker(mock);
                 return invoker.invoke(invocation);
             } catch (Throwable t) {
@@ -148,6 +170,7 @@ final public class MockInvoker<T> implements Invoker<T> {
 
     @SuppressWarnings("unchecked")
     private Invoker<T> getInvoker(String mock) {
+        // 从mock实现的map中获取，存在就返回
         Class<T> serviceType = (Class<T>) ReflectUtils.forName(url.getServiceInterface());
         String mockService = ConfigUtils.isDefault(mock) ? serviceType.getName() + "Mock" : mock;
         Invoker<T> invoker = (Invoker<T>) mocks.get(mockService);
@@ -157,6 +180,7 @@ final public class MockInvoker<T> implements Invoker<T> {
 
         T mockObject = (T) getMockObject(mock, serviceType);
         invoker = proxyFactory.getInvoker(mockObject, serviceType, url);
+        // 限制mock缓存数值
         if (mocks.size() < 10000) {
             mocks.put(mockService, invoker);
         }
@@ -169,6 +193,7 @@ final public class MockInvoker<T> implements Invoker<T> {
             mockService = serviceType.getName() + "Mock";
         }
 
+        // 反射加载类class信息，并实例化，后续直接发起调用就行
         Class<?> mockClass = ReflectUtils.forName(mockService);
         if (!serviceType.isAssignableFrom(mockClass)) {
             throw new IllegalStateException("The mock class " + mockClass.getName() +

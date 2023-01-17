@@ -87,6 +87,7 @@ public class CodecSupport {
     }
 
     public static ObjectInput deserialize(URL url, InputStream is, byte proto) throws IOException {
+        // 获取序列化协议，解码处理，返回解码后的结果ObjectInput
         Serialization s = getSerialization(url, proto);
         return s.deserialize(url, is);
     }

@@ -265,6 +265,7 @@ class CallbackServiceCodec {
     public static Object decodeInvocationArgument(Channel channel, RpcInvocation inv, Class<?>[] pts, int paraIndex, Object inObject) throws IOException {
         // if it's a callback, create proxy on client side, callback interface on client side can be invoked through channel
         // need get URL from channel and env when decode
+        // 如果是回调，在客户端创建代理，客户端回调接口可以通过通道调用解码时需要从通道获取URL和环境
         URL url = null;
         try {
             url = DubboProtocol.getDubboProtocol().getInvoker(channel, inv).getUrl();

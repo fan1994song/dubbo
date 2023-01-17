@@ -25,13 +25,14 @@ import java.util.concurrent.Executor;
 
 /**
  * ThreadPool
+ * 默认使用fixed类型线程池
  */
 @SPI("fixed")
 public interface ThreadPool {
 
     /**
      * Thread pool
-     *
+     * 基于 Dubbo SPI Adaptive 机制，加载对应的线程池实现，使用 URL.threadpool 属性
      * @param url URL contains thread parameter
      * @return thread pool
      */

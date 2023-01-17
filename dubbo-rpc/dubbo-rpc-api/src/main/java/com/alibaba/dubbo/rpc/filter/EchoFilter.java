@@ -26,6 +26,7 @@ import com.alibaba.dubbo.rpc.RpcException;
 import com.alibaba.dubbo.rpc.RpcResult;
 
 /**
+ * 回声测试，检测服务器是否可用
  * EchoInvokerFilter
  */
 @Activate(group = Constants.PROVIDER, order = -110000)
@@ -33,6 +34,7 @@ public class EchoFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation inv) throws RpcException {
+        // 方法名为$echo，且只存在一个参数，则认定为回声测试，直接返回参数值给消费方
         if (inv.getMethodName().equals(Constants.$ECHO) && inv.getArguments() != null && inv.getArguments().length == 1)
             return new RpcResult(inv.getArguments()[0]);
         return invoker.invoke(inv);

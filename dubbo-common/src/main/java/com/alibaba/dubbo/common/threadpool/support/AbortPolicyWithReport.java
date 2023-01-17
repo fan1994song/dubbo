@@ -53,6 +53,11 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
         this.url = url;
     }
 
+    /**
+     * 拒绝策略，输出warn日志，dump栈信息，抛出拒绝异常
+     * @param r
+     * @param e
+     */
     @Override
     public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
         String msg = String.format("Thread pool is EXHAUSTED!" +

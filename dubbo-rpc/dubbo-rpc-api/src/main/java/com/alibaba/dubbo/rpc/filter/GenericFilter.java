@@ -47,6 +47,7 @@ import java.lang.reflect.Method;
 
 /**
  * GenericInvokerFilter.
+ * 泛化调用拦截器
  */
 @Activate(group = Constants.PROVIDER, order = -20000)
 public class GenericFilter implements Filter {

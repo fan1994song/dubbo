@@ -123,8 +123,10 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
     public PropertyValues postProcessPropertyValues(
             PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeanCreationException {
 
+        // 1 查找Bean所有标注了@Reference的字段和方法
         InjectionMetadata metadata = findInjectionMetadata(beanName, bean.getClass(), pvs);
         try {
+            // 对字段、方法进行反射绑定
             metadata.inject(bean, beanName, pvs);
         } catch (BeanCreationException ex) {
             throw ex;
@@ -147,6 +149,7 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
         final List<AnnotationInjectedBeanPostProcessor.AnnotatedFieldElement> elements = new LinkedList<AnnotationInjectedBeanPostProcessor.AnnotatedFieldElement>();
 
         ReflectionUtils.doWithFields(beanClass, new ReflectionUtils.FieldCallback() {
+            // 遍历服务类所有的字段，查找Reference注解标注
             @Override
             public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 
@@ -218,7 +221,9 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
 
 
     private AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata buildAnnotatedMetadata(final Class<?> beanClass) {
+        // 标注了@Refernce字段
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedFieldElement> fieldElements = findFieldAnnotationMetadata(beanClass);
+        // 标注了@Refernce方法
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedMethodElement> methodElements = findAnnotatedMethodMetadata(beanClass);
         return new AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata(beanClass, fieldElements, methodElements);
 

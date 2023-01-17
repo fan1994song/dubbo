@@ -78,6 +78,8 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
         try {
+            // DubboInvoker中doInvoke应该就是发起请求的真实逻辑,根据请求的单向、异步或者是同步,来决定如何处理返回的ResponseFuture对象,
+            // 若是异步,则将结果填入RpcContext中的future中,不阻塞当前线程,若是同步,则阻塞等待直到超时
             boolean isAsync = RpcUtils.isAsync(getUrl(), invocation);
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);
             int timeout = getUrl().getMethodParameter(methodName, Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);

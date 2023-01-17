@@ -38,6 +38,8 @@ import java.util.concurrent.Future;
 
 /**
  * EventFilter
+ * 消费者端，在发起invoke或得到返回值、出现异常的时候触发回调事件
+ *
  */
 @Activate(group = Constants.CONSUMER)
 public class FutureFilter implements Filter {

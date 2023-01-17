@@ -40,9 +40,11 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
     // Log output
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRegistryFactory.class);
 
+    // 静态属性，锁，用于 #destroyAll() 和 #getRegistry(url) 方法，控制对 REGISTRIES 访问的竞争
     // The lock for the acquisition process of the registry
     private static final ReentrantLock LOCK = new ReentrantLock();
 
+    // Registry 集合
     // Registry Collection Map<RegistryAddress, Registry>
     private static final Map<String, Registry> REGISTRIES = new ConcurrentHashMap<String, Registry>();
 
@@ -56,6 +58,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
     }
 
     /**
+     * 关闭所有Registry对象
      * Close all created registries
      */
     // TODO: 2017/8/30 to move somewhere else better
@@ -80,6 +83,11 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         }
     }
 
+    /**
+     * 获得注册中心 Registry 对象。优先从缓存中获取，否则进行创建
+     * @param url Registry address, is not allowed to be empty
+     * @return
+     */
     @Override
     public Registry getRegistry(URL url) {
         url = url.setPath(RegistryService.class.getName())
@@ -105,6 +113,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         }
     }
 
+    // 创建 Registry 对象
     protected abstract Registry createRegistry(URL url);
 
 }

@@ -30,6 +30,7 @@ import java.util.concurrent.Semaphore;
 
 /**
  * ThreadLimitInvokerFilter
+ * 提供者端，用于限制服务端的最大并行调用数
  */
 @Activate(group = Constants.PROVIDER, value = Constants.EXECUTES_KEY)
 public class ExecuteLimitFilter implements Filter {
@@ -48,6 +49,7 @@ public class ExecuteLimitFilter implements Filter {
              * http://manzhizhen.iteye.com/blog/2386408
              * use semaphore for concurrency control (to limit thread number)
              */
+            // 通过信号量来控制并发度，这里没有timeout的概念，就直接快速失败了
             executesLimit = count.getSemaphore(max);
             if(executesLimit != null && !(acquireResult = executesLimit.tryAcquire())) {
                 throw new RpcException("Failed to invoke method " + invocation.getMethodName() + " in provider " + url + ", cause: The service using threads greater than <dubbo:service executes=\"" + max + "\" /> limited.");
@@ -67,6 +69,7 @@ public class ExecuteLimitFilter implements Filter {
                 throw new RpcException("unexpected exception when ExecuteLimitFilter", t);
             }
         } finally {
+            // 释放信号量
             RpcStatus.endCount(url, methodName, System.currentTimeMillis() - begin, isSuccess);
             if(acquireResult) {
                 executesLimit.release();

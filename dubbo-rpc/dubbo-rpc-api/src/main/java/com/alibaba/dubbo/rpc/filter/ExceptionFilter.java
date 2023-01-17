@@ -42,6 +42,8 @@ import java.lang.reflect.Method;
  * exception not declared on the interface</li>
  * <li>Wrap the exception not introduced in API package into RuntimeException. Framework will serialize the outer exception but stringnize its cause in order to avoid of possible serialization problem on client side</li>
  * </ol>
+ *
+ * 提供者端，统一的异常处理，防止出现序列化失败
  */
 @Activate(group = Constants.PROVIDER)
 public class ExceptionFilter implements Filter {

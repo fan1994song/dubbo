@@ -81,6 +81,7 @@ public class AccessLogFilter implements Filter {
     private volatile ScheduledFuture<?> logFuture = null;
 
     private void init() {
+        // 每五秒钟执行一次日志记录的任务
         if (logFuture == null) {
             synchronized (logScheduled) {
                 if (logFuture == null) {
@@ -143,6 +144,7 @@ public class AccessLogFilter implements Filter {
                     sn.append(JSON.toJSONString(args));
                 }
                 String msg = sn.toString();
+                // 日志打印。如果用户配置了使用应用本身的日志组件，则直接通过封装的 LoggerFactory打印日志
                 if (ConfigUtils.isDefault(accesslog)) {
                     LoggerFactory.getLogger(ACCESS_LOG_KEY + "." + invoker.getInterface().getName()).info(msg);
                 } else {

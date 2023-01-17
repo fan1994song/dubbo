@@ -79,6 +79,7 @@ public class NettyServer extends AbstractServer implements Server {
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
             @Override
             public ChannelPipeline getPipeline() {
+                // dubbo 自行实现的类似LengthFieldBasedFrameDecoder的方式，最大长度默认是8M，心跳没有使用IdleStateHandler，通过内部定时任务来处理的
                 NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyServer.this);
                 ChannelPipeline pipeline = Channels.pipeline();
                 /*int idleTimeout = getIdleTimeout();

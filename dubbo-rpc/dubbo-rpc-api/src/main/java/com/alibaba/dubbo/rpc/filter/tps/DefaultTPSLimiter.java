@@ -23,6 +23,10 @@ import com.alibaba.dubbo.rpc.Invocation;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * 用于服务端的限流，注意与ExecuteLimitFilter 区分
+ * DefaultTPSLimiter：是使用的令牌桶算法，来做的基于QPS的限流，ExecuteLimitFilter是并发调用数的限流
+ */
 public class DefaultTPSLimiter implements TPSLimiter {
 
     private final ConcurrentMap<String, StatItem> stats

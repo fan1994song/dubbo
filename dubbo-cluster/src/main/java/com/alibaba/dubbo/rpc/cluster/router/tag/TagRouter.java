@@ -46,11 +46,21 @@ public class TagRouter extends AbstractRouter {
         return url;
     }
 
+    /**
+     * tag区分，应该是指多机房处理
+     * @param invokers
+     * @param url        refer url
+     * @param invocation
+     * @param <T>
+     * @return
+     * @throws RpcException
+     */
     @Override
     public <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
         // filter
         List<Invoker<T>> result = new ArrayList<Invoker<T>>();
         // Dynamic param
+        // 获取线程本地变量tag属性，不为空则和提供者的url中的tag进行比较，相同的加入到同一个列表返回，适用于同机房调用的场景
         String tag = RpcContext.getContext().getAttachment(Constants.TAG_KEY);
         // Tag request
         if (!StringUtils.isEmpty(tag)) {
@@ -62,8 +72,10 @@ public class TagRouter extends AbstractRouter {
             }
         }
         // If Constants.REQUEST_TAG_KEY unspecified or no invoker be selected, downgrade to normal invokers
+        // 若同tag数据为空
         if (result.isEmpty()) {
             // Only forceTag = true force match, otherwise downgrade
+            // 获取线程中是否是强制使用的tag,若不是强制使用，那么获取tag为空的服务列表返回，兜底降级
             String forceTag = RpcContext.getContext().getAttachment(Constants.FORCE_USE_TAG);
             if (StringUtils.isEmpty(forceTag) || "false".equals(forceTag)) {
                 for (Invoker<T> invoker : invokers) {

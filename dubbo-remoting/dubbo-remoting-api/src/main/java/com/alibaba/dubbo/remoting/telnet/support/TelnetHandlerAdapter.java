@@ -31,6 +31,7 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
 
     @Override
     public String telnet(Channel channel, String message) throws RemotingException {
+        // 提示
         String prompt = channel.getUrl().getParameterAndDecoded(Constants.PROMPT_KEY, Constants.DEFAULT_PROMPT);
         boolean noprompt = message.contains("--no-prompt");
         message = message.replace("--no-prompt", "");
@@ -40,7 +41,9 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
         if (message.length() > 0) {
             int i = message.indexOf(' ');
             if (i > 0) {
+                // 提取执行命令
                 command = message.substring(0, i).trim();
+                // 提取命令后的所有字符串
                 message = message.substring(i + 1).trim();
             } else {
                 command = message;
@@ -50,9 +53,11 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
             command = "";
         }
         if (command.length() > 0) {
+            // 查系统是否有命令对应的扩展点
             if (extensionLoader.hasExtension(command)) {
                 if (commandEnabled(channel.getUrl(), command)) {
                     try {
+                        // 交给具体扩展点执行
                         String result = extensionLoader.getExtension(command).telnet(channel, message);
                         if (result == null) {
                             return null;
@@ -71,6 +76,7 @@ public class TelnetHandlerAdapter extends ChannelHandlerAdapter implements Telne
                 buf.append(command);
             }
         }
+        // 在Telnet消息结尾追加回车和换行
         if (buf.length() > 0) {
             buf.append("\r\n");
         }

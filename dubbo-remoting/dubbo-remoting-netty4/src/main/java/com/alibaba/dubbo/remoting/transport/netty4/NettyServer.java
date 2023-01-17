@@ -62,6 +62,7 @@ public class NettyServer extends AbstractServer implements Server {
     private EventLoopGroup workerGroup;
 
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
+        // ChannelHandlers.wrap包装下，通过装饰器模式来将业务逻辑异步化，避免使用I/O线程
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
@@ -69,10 +70,12 @@ public class NettyServer extends AbstractServer implements Server {
     protected void doOpen() throws Throwable {
         bootstrap = new ServerBootstrap();
 
+        // 默认主从reactor模型的IO线程模型
         bossGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("NettyServerBoss", true));
         workerGroup = new NioEventLoopGroup(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
                 new DefaultThreadFactory("NettyServerWorker", true));
 
+        // 只构建一个nettyServerHandler，通过其来做业务处理
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
         channels = nettyServerHandler.getChannels();
 

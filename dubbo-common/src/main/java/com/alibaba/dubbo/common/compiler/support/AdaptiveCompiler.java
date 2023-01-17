@@ -23,10 +23,15 @@ import com.alibaba.dubbo.common.extension.ExtensionLoader;
 
 /**
  * AdaptiveCompiler. (SPI, Singleton, ThreadSafe)
+ * AdaptiveCompiler会固定为默认实现
  */
 @Adaptive
 public class AdaptiveCompiler implements Compiler {
 
+    /**
+     * AdaptiveCompiler#setDefaultCompiler 方法会在ApplicationConfig 中被调用，也就是Dubbo 在启动时，会解析配置中的<dubbo:application compiler="jdk" />标签，
+     * 获取设置的值，初始化对应的编译器。如果没有标签设置，使用@SPI(Hjavassistn)中的设置，即JavassistCompiler
+     */
     private static volatile String DEFAULT_COMPILER;
 
     public static void setDefaultCompiler(String compiler) {

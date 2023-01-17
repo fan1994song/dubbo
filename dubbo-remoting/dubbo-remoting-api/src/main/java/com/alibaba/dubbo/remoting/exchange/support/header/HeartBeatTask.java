@@ -26,6 +26,9 @@ import com.alibaba.dubbo.remoting.exchange.Request;
 
 import java.util.Collection;
 
+/**
+ * dubbo 心跳检测任务，提供者、消费者都是同一套
+ */
 final class HeartBeatTask implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(HeartBeatTask.class);
@@ -46,15 +49,19 @@ final class HeartBeatTask implements Runnable {
     public void run() {
         try {
             long now = System.currentTimeMillis();
+            // 遍历所有的channel
             for (Channel channel : channelProvider.getChannels()) {
+                // 关闭状态的忽略
                 if (channel.isClosed()) {
                     continue;
                 }
                 try {
+                    // 获取channel上次的读时间戳、写时间戳
                     Long lastRead = (Long) channel.getAttribute(
                             HeaderExchangeHandler.KEY_READ_TIMESTAMP);
                     Long lastWrite = (Long) channel.getAttribute(
                             HeaderExchangeHandler.KEY_WRITE_TIMESTAMP);
+                    // TCP连接 空闲超过心跳时间时，发送心跳事件报文，(默认60秒)
                     if ((lastRead != null && now - lastRead > heartbeat)
                             || (lastWrite != null && now - lastWrite > heartbeat)) {
                         Request req = new Request();
@@ -67,16 +74,19 @@ final class HeartBeatTask implements Runnable {
                                     + ", cause: The channel has no data-transmission exceeds a heartbeat period: " + heartbeat + "ms");
                         }
                     }
+                    // 客户端空闲超时触发重连(默认超时为3分钟)
                     if (lastRead != null && now - lastRead > heartbeatTimeout) {
                         logger.warn("Close channel " + channel
                                 + ", because heartbeat read idle time out: " + heartbeatTimeout + "ms");
                         if (channel instanceof Client) {
                             try {
+                                // 客户端就重新连接
                                 ((Client) channel).reconnect();
                             } catch (Exception e) {
                                 //do nothing
                             }
                         } else {
+                            // 如果是服务端关闭连接，客户端会发起重连
                             channel.close();
                         }
                     }

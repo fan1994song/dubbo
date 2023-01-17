@@ -22,6 +22,7 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Protocol. (API/SPI, Singleton, ThreadSafe)
+ * 根据URL中protocol决定使用哪种策略
  */
 @SPI("dubbo")
 public interface Protocol {
@@ -45,6 +46,12 @@ public interface Protocol {
      * @param invoker Service invoker
      * @return exporter reference for exported service, useful for unexport the service later
      * @throws RpcException thrown when error occurs during export the service, for example: port is occupied
+     *
+     * 导出用于远程调用的服务:
+     * 1。RpcContext.getContext(). setremoteaddress ();
+     * 2。export()必须是幂等的，也就是说，当 export同一个URL
+     * 3。调用一次和调用两次没有区别。调用器实例由框架传入，协议不需要关心
+     * 服务类型@param调用器服务调用器* @返回导出服务的导出引用，用于以后取消导出服务
      */
     @Adaptive
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
@@ -63,6 +70,8 @@ public interface Protocol {
      * @param url  URL address for the remote service
      * @return invoker service's local proxy
      * @throws RpcException when there's any error while connecting to the service provider
+     *
+     * 使用adaptive中值，不存在应该是会默认使用接口名作为key，所以会默认从URL中的protocol来选择目标类
      */
     @Adaptive
     <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException;

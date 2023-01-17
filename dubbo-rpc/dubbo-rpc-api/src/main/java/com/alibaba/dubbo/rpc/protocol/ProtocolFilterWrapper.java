@@ -30,6 +30,7 @@ import com.alibaba.dubbo.rpc.RpcException;
 import java.util.List;
 
 /**
+ * 协议监听器类，装饰器模式
  * ListenerProtocol
  */
 public class ProtocolFilterWrapper implements Protocol {
@@ -45,6 +46,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        // 获取添加了@Activate的具体group的filter类型的实例，根据url中的参数选择相匹配的filter
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
@@ -67,6 +69,7 @@ public class ProtocolFilterWrapper implements Protocol {
                         return invoker.isAvailable();
                     }
 
+                    // invoke此处应该是构成了责任链，一层层执行下去
                     @Override
                     public Result invoke(Invocation invocation) throws RpcException {
                         return filter.invoke(next, invocation);
@@ -94,17 +97,22 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 是REGISTRY_PROTOCOL协议直接暴露逻辑
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+        // 否则通过包装为责任链模式，(会过滤provider端分组)，然后触发Dubbo协议暴露
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 抽象判断都放在ProtocolFilterWrapper中，registry
         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+            // 调用真正的protocol实现
             return protocol.refer(type, url);
         }
+        // 通过包装为责任链模式，(会过滤consumer端分组)，然后发起调用
         return buildInvokerChain(protocol.refer(type, url), Constants.REFERENCE_FILTER_KEY, Constants.CONSUMER);
     }
 

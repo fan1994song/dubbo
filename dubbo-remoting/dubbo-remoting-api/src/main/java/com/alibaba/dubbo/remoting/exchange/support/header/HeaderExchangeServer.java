@@ -64,11 +64,14 @@ public class HeaderExchangeServer implements ExchangeServer {
             throw new IllegalArgumentException("server == null");
         }
         this.server = server;
+        // 心跳时间间隔
         this.heartbeat = server.getUrl().getParameter(Constants.HEARTBEAT_KEY, 0);
+        // 心跳超时时间
         this.heartbeatTimeout = server.getUrl().getParameter(Constants.HEARTBEAT_TIMEOUT_KEY, heartbeat * 3);
         if (heartbeatTimeout < heartbeat * 2) {
             throw new IllegalStateException("heartbeatTimeout < heartbeatInterval * 2");
         }
+        // 启动心跳定时任务
         startHeartbeatTimer();
     }
 
@@ -255,6 +258,7 @@ public class HeaderExchangeServer implements ExchangeServer {
     private void startHeartbeatTimer() {
         stopHeartbeatTimer();
         if (heartbeat > 0) {
+            // 定时任务发起心跳续约，60秒执行一次
             heartbeatTimer = scheduled.scheduleWithFixedDelay(
                     new HeartBeatTask(new HeartBeatTask.ChannelProvider() {
                         @Override

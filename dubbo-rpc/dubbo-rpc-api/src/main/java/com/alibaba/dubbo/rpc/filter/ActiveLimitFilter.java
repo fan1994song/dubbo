@@ -28,6 +28,7 @@ import com.alibaba.dubbo.rpc.RpcStatus;
 
 /**
  * LimitInvokerFilter
+ * 消费者端，限制消费者对服务端的最大并行调用数
  */
 @Activate(group = Constants.CONSUMER, value = Constants.ACTIVES_KEY)
 public class ActiveLimitFilter implements Filter {
@@ -36,15 +37,20 @@ public class ActiveLimitFilter implements Filter {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
+        // 获取最大活跃数值，默认0
         int max = invoker.getUrl().getMethodParameter(methodName, Constants.ACTIVES_KEY, 0);
+        // 获取当前正在调用的数值
         RpcStatus count = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
         if (max > 0) {
+            // 获取超时时间
             long timeout = invoker.getUrl().getMethodParameter(invocation.getMethodName(), Constants.TIMEOUT_KEY, 0);
             long start = System.currentTimeMillis();
             long remain = timeout;
             int active = count.getActive();
+            // 当活跃连接大于等于最大连接数时,阻塞
             if (active >= max) {
                 synchronized (count) {
+                    // 获取锁,wait()方式让出锁，并等待
                     while ((active = count.getActive()) >= max) {
                         try {
                             count.wait(remain);
@@ -76,6 +82,7 @@ public class ActiveLimitFilter implements Filter {
             }
         } finally {
             if (max > 0) {
+                // 得到锁，通知等待的线程，可以执行
                 synchronized (count) {
                     count.notify();
                 }

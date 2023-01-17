@@ -43,7 +43,9 @@ public class StatusTelnetHandler implements TelnetHandler {
 
     @Override
     public String telnet(Channel channel, String message) {
+        // status -l 查看线程池、内存、注册中心等状态信息
         if (message.equals("-l")) {
+            // 获取check列表
             List<StatusChecker> checkers = extensionLoader.getActivateExtension(channel.getUrl(), "status");
             String[] header = new String[]{"resource", "status", "message"};
             List<List<String>> table = new ArrayList<List<String>>();

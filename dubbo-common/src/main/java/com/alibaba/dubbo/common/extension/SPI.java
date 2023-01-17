@@ -50,6 +50,8 @@ import java.lang.annotation.Target;
  * Fails to load Extension("mina"). When user configure to use mina, dubbo will complain the extension cannot be loaded,
  * instead of reporting which extract extension implementation fails and the extract reason.
  * </p>
+ *
+ * 标记这个接口是一个Dubbo SPI接口，通过value这个属性，我们可以传入不同的参数来设置这个接口的默认实现类。例如，我们可以看到Transporter接口使用Netty作为默认实现
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -81,6 +81,7 @@ public @interface Activate {
 
     /**
      * Absolute ordering info, optional
+     * 决定排序信息，越小越靠前
      *
      * @return absolute ordering info
      */

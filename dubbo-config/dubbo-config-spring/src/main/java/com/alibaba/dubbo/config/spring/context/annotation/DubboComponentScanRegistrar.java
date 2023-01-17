@@ -48,6 +48,8 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  * @see ServiceAnnotationBeanPostProcessor
  * @see ReferenceAnnotationBeanPostProcessor
  * @since 2.5.7
+ *
+ * 使用注解旧DubboComponentScan，会激活 DubboComponentScanRegistrar, 同时生成ServiceAnnotationBeanPostProcessor和ReferenceAnnotationBeanPostProcessor 两种处理器
  */
 public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistrar {
 
@@ -56,8 +58,10 @@ public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistra
 
         Set<String> packagesToScan = getPackagesToScan(importingClassMetadata);
 
+        // 处理服务注解
         registerServiceAnnotationBeanPostProcessor(packagesToScan, registry);
 
+        // 处理消费注解
         registerReferenceAnnotationBeanPostProcessor(registry);
 
     }

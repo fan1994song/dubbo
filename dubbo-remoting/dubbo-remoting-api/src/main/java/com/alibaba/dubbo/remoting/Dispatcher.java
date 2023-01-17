@@ -24,6 +24,7 @@ import com.alibaba.dubbo.remoting.transport.dispatcher.all.AllDispatcher;
 
 /**
  * ChannelHandlerWrapper (SPI, Singleton, ThreadSafe)
+ * 线程池模型基于配置选定
  */
 @SPI(AllDispatcher.NAME)
 public interface Dispatcher {

@@ -46,6 +46,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * merge调用并不常见，并且业务可以自己做，没什么难度
+ * @param <T>
+ */
 @SuppressWarnings("unchecked")
 public class MergeableClusterInvoker<T> implements Invoker<T> {
 
@@ -62,6 +66,7 @@ public class MergeableClusterInvoker<T> implements Invoker<T> {
     public Result invoke(final Invocation invocation) throws RpcException {
         List<Invoker<T>> invokers = directory.list(invocation);
 
+        // 若只是合并同一个组的请求，则调用成功就返回
         String merger = getUrl().getMethodParameter(invocation.getMethodName(), Constants.MERGER_KEY);
         if (ConfigUtils.isEmpty(merger)) { // If a method doesn't have a merger, only invoke one Group
             for (final Invoker<T> invoker : invokers) {
@@ -74,6 +79,7 @@ public class MergeableClusterInvoker<T> implements Invoker<T> {
 
         Class<?> returnType;
         try {
+            // 根据方法名、参数类型，获取接口类的某个方法的返回类型
             returnType = getInterface().getMethod(
                     invocation.getMethodName(), invocation.getParameterTypes()).getReturnType();
         } catch (NoSuchMethodException e) {

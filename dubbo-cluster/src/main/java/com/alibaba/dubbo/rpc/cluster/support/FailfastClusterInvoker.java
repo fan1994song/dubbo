@@ -31,6 +31,8 @@ import java.util.List;
  * Execute exactly once, which means this policy will throw an exception immediately in case of an invocation error.
  * Usually used for non-idempotent write operations
  *
+ * 快速失败，只要出现异常就抛出，不进行重试，当网络不佳或者上下线期间可能会有一些报错出现
+ *
  * <a href="http://en.wikipedia.org/wiki/Fail-fast">Fail-fast</a>
  *
  */
@@ -43,8 +45,10 @@ public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         checkInvokers(invokers, invocation);
+        // 选择机器
         Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
         try {
+            // 发起调用，失败就抛出异常
             return invoker.invoke(invocation);
         } catch (Throwable e) {
             if (e instanceof RpcException && ((RpcException) e).isBiz()) { // biz exception.

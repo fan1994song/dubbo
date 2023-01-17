@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 
 /**
  * ConditionRouter
+ * 条件路由
  */
 public class ConditionRouter extends AbstractRouter {
 
@@ -51,22 +52,37 @@ public class ConditionRouter extends AbstractRouter {
     private final Map<String, MatchPair> whenCondition;
     private final Map<String, MatchPair> thenCondition;
 
+    /**
+     * method = find* => host = 192.168.1.22
+     * • 这条配置说明所有调用find开头的方法都会被路由到IP为192.168.1.22的服务节点上。
+     * •=>之前的部分为消费者匹配条件，将所有参数和消费者的URL进行对比，当消费者 满足匹配条件时，对该消费者执行后面的过滤规则。
+     * •=>之后的部分为提供者地址列表的过滤条件，将所有参数和提供者的URL进行对比, 消费者最终只获取过滤后的地址列表。
+     * • 如果匹配条件为空，则表示应用于所有消费方，如=>host != 192.168.1.22。
+     * • 如果过滤条件为空，则表示禁止访问，如host = 192.168.1.22 =>。
+     * @param url
+     */
     public ConditionRouter(URL url) {
         this.url = url;
         this.priority = url.getParameter(Constants.PRIORITY_KEY, DEFAULT_PRIORITY);
         this.force = url.getParameter(Constants.FORCE_KEY, false);
         try {
+            /**
+             * 根据URL的键rule获取对应的规则字符串。以=>为界，把规则分成两段，前面部分 为whenRule,即消费者匹配条件;
+             * 后面部分为thenRule,即提供者地址列表的过滤条件。我们 以代码清单7-8的规则为例，其会被解析为whenRule: method = find*和thenRule: host = 192.168.1.22
+             */
             String rule = url.getParameterAndDecoded(Constants.RULE_KEY);
             if (rule == null || rule.trim().length() == 0) {
                 throw new IllegalArgumentException("Illegal route rule!");
             }
             rule = rule.replace("consumer.", "").replace("provider.", "");
             int i = rule.indexOf("=>");
+            // 消费者匹配条件命中时，根据thenRule规则过滤出服务列表
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();
             Map<String, MatchPair> when = StringUtils.isBlank(whenRule) || "true".equals(whenRule) ? new HashMap<String, MatchPair>() : parseRule(whenRule);
             Map<String, MatchPair> then = StringUtils.isBlank(thenRule) || "false".equals(thenRule) ? null : parseRule(thenRule);
             // NOTE: It should be determined on the business level whether the `When condition` can be empty or not.
+            // 应该在业务级别确定“When条件”是否可以为空
             this.whenCondition = when;
             this.thenCondition = then;
         } catch (ParseException e) {
@@ -74,6 +90,15 @@ public class ConditionRouter extends AbstractRouter {
         }
     }
 
+    /**
+     * 解析路由规则
+     * 会根据key-value之间的分隔符对key-value做分类(如果A=B, 则分隔符为=)，支持的分隔符形式有:A=B、A&B、A!=B、A,B这4种形式。
+     * 最终参数都会被 封装成一个个MatchPair对象，放入Map中保存。Map的key是参数值，value是MatchPair 对象
+     *
+     * @param rule
+     * @return
+     * @throws ParseException
+     */
     private static Map<String, MatchPair> parseRule(String rule)
             throws ParseException {
         Map<String, MatchPair> condition = new HashMap<String, MatchPair>();
@@ -84,16 +109,19 @@ public class ConditionRouter extends AbstractRouter {
         MatchPair pair = null;
         // Multiple values
         Set<String> values = null;
+        // 正则解析路由配置信息
         final Matcher matcher = ROUTE_PATTERN.matcher(rule);
         while (matcher.find()) { // Try to match one by one
             String separator = matcher.group(1);
             String content = matcher.group(2);
             // Start part of the condition expression.
+            // 开始部分条件表达式
             if (separator == null || separator.length() == 0) {
                 pair = new MatchPair();
                 condition.put(content, pair);
             }
             // The KV part of the condition expression
+            // 条件表达式的KV部分
             else if ("&".equals(separator)) {
                 if (condition.get(content) == null) {
                     pair = new MatchPair();
@@ -156,6 +184,7 @@ public class ConditionRouter extends AbstractRouter {
                 logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
                 return result;
             }
+            // 将方法名称匹配的invoker作为可选列表返回
             for (Invoker<T> invoker : invokers) {
                 if (matchThen(invoker.getUrl(), url)) {
                     result.add(invoker);
@@ -202,6 +231,7 @@ public class ConditionRouter extends AbstractRouter {
             String key = matchPair.getKey();
             String sampleValue;
             //get real invoked method name from invocation
+            // 从invocation中获取方法名
             if (invocation != null && (Constants.METHOD_KEY.equals(key) || Constants.METHODS_KEY.equals(key))) {
                 sampleValue = invocation.getMethodName();
             } else {
@@ -211,6 +241,7 @@ public class ConditionRouter extends AbstractRouter {
                 }
             }
             if (sampleValue != null) {
+                // host中的数据是否匹配
                 if (!matchPair.getValue().isMatch(sampleValue, param)) {
                     return false;
                 } else {

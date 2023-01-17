@@ -26,6 +26,7 @@ import java.util.Random;
 
 /**
  * LeastActiveLoadBalance
+ * 最少活跃度、权重负载均衡策略，最少活跃数优先
  *
  */
 public class LeastActiveLoadBalance extends AbstractLoadBalance {
@@ -45,6 +46,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
         boolean sameWeight = true; // Every invoker has the same weight value?
         for (int i = 0; i < length; i++) {
             Invoker<T> invoker = invokers.get(i);
+            // 根据URL、方法名获取统计数据中的活跃连接数值
             int active = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName()).getActive(); // Active number
             int afterWarmup = getWeight(invoker, invocation); // Weight
             if (leastActive == -1 || active < leastActive) { // Restart, when find a invoker having smaller least active value.

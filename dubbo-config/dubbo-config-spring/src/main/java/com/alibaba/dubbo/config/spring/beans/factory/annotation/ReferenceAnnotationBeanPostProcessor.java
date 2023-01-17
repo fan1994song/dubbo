@@ -45,6 +45,9 @@ import java.util.concurrent.ConcurrentMap;
  * that Consumer service {@link Reference} annotated fields
  *
  * @since 2.5.7
+ *
+ * 消费注解注入
+ * (1) 获取类中标注的@Reference注解的字段和方法。 (2) 反射设置字段或方法对应的引用。
  */
 public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBeanPostProcessor<Reference>
         implements ApplicationContextAware, ApplicationListener {

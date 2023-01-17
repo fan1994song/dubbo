@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * ConsistentHashLoadBalance
+ * 一致性hash负载均衡策略
  *
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
@@ -42,14 +43,19 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     @SuppressWarnings("unchecked")
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        // 获得方法名
         String methodName = RpcUtils.getMethodName(invocation);
+        // 以接口名+服务方法名构建key
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
+        // 把所有可以调用的Invoker列表进行“Hash”
         int identityHashCode = System.identityHashCode(invokers);
+        // 若负载均衡时,现在Invoker列表的Hash码和之前的不一样，说明Invoker列表已经发生了变化，则重新创建Selector
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
             selectors.put(key, new ConsistentHashSelector<T>(invokers, methodName, identityHashCode));
             selector = (ConsistentHashSelector<T>) selectors.get(key);
         }
+        // 通过 selector 选出一个 Invoker
         return selector.select(invocation);
     }
 
@@ -63,11 +69,21 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
         private final int[] argumentIndex;
 
+        /**
+         * 一致性选择器初始化流程
+         * @param invokers
+         * @param methodName
+         * @param identityHashCode
+         */
         ConsistentHashSelector(List<Invoker<T>> invokers, String methodName, int identityHashCode) {
+            // treeMap来作为散列的环形存储容器
             this.virtualInvokers = new TreeMap<Long, Invoker<T>>();
+            // 服务列表的唯一标识
             this.identityHashCode = identityHashCode;
             URL url = invokers.get(0).getUrl();
+            // 获取URL中哈希节点值，默认是160个复制节点
             this.replicaNumber = url.getMethodParameter(methodName, "hash.nodes", 160);
+            // 获取URL中方法的需要hash的参数,根据逗号分割,默认是0(比如我就用consumerId来作为唯一的hash参数，那么就是指定用户ID路由到指定服务器)
             String[] index = Constants.COMMA_SPLIT_PATTERN.split(url.getMethodParameter(methodName, "hash.arguments", "0"));
             argumentIndex = new int[index.length];
             for (int i = 0; i < index.length; i++) {
@@ -75,6 +91,8 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             }
             for (Invoker<T> invoker : invokers) {
                 String address = invoker.getUrl().getAddress();
+                // 单个服务实例，复制160个节点放入存储容器中，用于做一致性hash的数组。
+                // 这里的一致性hash应该是和常规的16384个hash槽点不一样，服务越多槽点越多，(因为是treeMap所以可以获取最大的值进行取余，再判定落点,可惜看后面的代码他们并没有这么做，超出了，就用头一个,哇哇哇)
                 for (int i = 0; i < replicaNumber / 4; i++) {
                     byte[] digest = md5(address + i);
                     for (int h = 0; h < 4; h++) {
@@ -86,6 +104,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         }
 
         public Invoker<T> select(Invocation invocation) {
+            // 参数组成key，进行md5处理，再进行hash，去map中查找落点
             String key = toKey(invocation.getArguments());
             byte[] digest = md5(key);
             return selectForKey(hash(digest, 0));

@@ -52,6 +52,7 @@ public class DecodeHandler extends AbstractChannelHandlerDelegate {
     }
 
     private void decode(Object message) {
+        // 未解码，执行解码操作
         if (message != null && message instanceof Decodeable) {
             try {
                 ((Decodeable) message).decode();

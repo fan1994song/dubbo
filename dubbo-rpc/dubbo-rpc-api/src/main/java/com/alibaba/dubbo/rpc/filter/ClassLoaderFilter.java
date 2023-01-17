@@ -26,6 +26,7 @@ import com.alibaba.dubbo.rpc.RpcException;
 
 /**
  * ClassLoaderInvokerFilter
+ * 服务提供者,切换不同线程的类加载器，服务调用完成后会还原回去
  */
 @Activate(group = Constants.PROVIDER, order = -30000)
 public class ClassLoaderFilter implements Filter {

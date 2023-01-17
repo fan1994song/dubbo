@@ -62,13 +62,17 @@ public class InvokeTelnetHandler implements TelnetHandler {
         if (i < 0 || !message.endsWith(")")) {
             return "Invalid parameters, format: service.method(args)";
         }
+        // 提取调用的方法、参数值
         String method = message.substring(0, i).trim();
         String args = message.substring(i + 1, message.length() - 1).trim();
         i = method.lastIndexOf(".");
         if (i >= 0) {
+            // 提取方法前面的接口
             service = method.substring(0, i).trim();
+            // 提取方法名
             method = method.substring(i + 1).trim();
         }
+        // 参数json转换成参数对象
         List<Object> list;
         try {
             list = JSON.parseArray("[" + args + "]", Object.class);
@@ -94,6 +98,7 @@ public class InvokeTelnetHandler implements TelnetHandler {
                 }
             }
             for (Exporter<?> exporter : exporters) {
+                // 接口名、方法、参数值和类型作为检索方法的条件
                 if (StringUtils.isBlank(service)
                         || service.equals(exporter.getInvoker().getInterface().getSimpleName())
                         || service.equals(exporter.getInvoker().getInterface().getName())
@@ -125,9 +130,11 @@ public class InvokeTelnetHandler implements TelnetHandler {
         if (invoker != null) {
             if (invokeMethod != null) {
                 try {
+                    // 将参数值转换成Java对象值
                     Object[] array = PojoUtils.realize(list.toArray(), invokeMethod.getParameterTypes(), invokeMethod.getGenericParameterTypes());
                     RpcContext.getContext().setLocalAddress(channel.getLocalAddress()).setRemoteAddress(channel.getRemoteAddress());
                     long start = System.currentTimeMillis();
+                    // 根据查找到的Invoker、构造RpcInvocation进行方法调用
                     Object result = invoker.invoke(new RpcInvocation(invokeMethod, array)).recreate();
                     long end = System.currentTimeMillis();
                     buf.append(JSON.toJSONString(result));

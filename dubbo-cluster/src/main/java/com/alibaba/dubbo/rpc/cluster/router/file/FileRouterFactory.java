@@ -51,6 +51,7 @@ public class FileRouterFactory implements RouterFactory {
                     type = path.substring(i + 1);
                 }
             }
+            // 路由的url绝对路径就是路由规则的文件地址
             String rule = IOUtils.read(new FileReader(new File(url.getAbsolutePath())));
 
             boolean runtime = url.getParameter(Constants.RUNTIME_KEY, false);

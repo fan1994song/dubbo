@@ -37,6 +37,7 @@ public class LimitedThreadPool implements ThreadPool {
 
     @Override
     public Executor getExecutor(URL url) {
+        // 可伸缩线程池，增大后基本很难降低，要空闲时间毫秒数要达到 MAX_VALUE，目的是为了避免收缩时突然来了大流量引起的性能问题
         String name = url.getParameter(Constants.THREAD_NAME_KEY, Constants.DEFAULT_THREAD_NAME);
         int cores = url.getParameter(Constants.CORE_THREADS_KEY, Constants.DEFAULT_CORE_THREADS);
         int threads = url.getParameter(Constants.THREADS_KEY, Constants.DEFAULT_THREADS);

@@ -32,6 +32,7 @@ import java.util.Map;
 
 /**
  * ContextInvokerFilter
+ * 提供者端过滤器，将invocation、localhost、隐式参数放入上下文中
  */
 @Activate(group = Constants.PROVIDER, order = -10000)
 public class ContextFilter implements Filter {
